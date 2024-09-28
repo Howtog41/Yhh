@@ -1,4 +1,5 @@
 import os
+import fitz  # PyMuPDF for handling text, images, layers
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from PyPDF2 import PdfReader, PdfWriter
@@ -35,16 +36,64 @@ async def handle_pdf(update: Update, context) -> None:
             os.remove(output_pdf)
 
 # Function to remove watermark from a PDF file
-def remove_watermark(input_pdf, output_pdf):
-    reader = PdfReader(input_pdf)
+
+def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
+    # Open the PDF using PyMuPDF (fitz)
+    doc = fitz.open(input_pdf)
+
+    # Process each page to remove text-based and image-based watermarks
+    for page in doc:
+        # 1. Remove text-based watermarks
+        if watermark_text:
+            text_instances = page.search_for(watermark_text)
+            for inst in text_instances:
+                page.add_redact_annot(inst, fill=(255, 255, 255))  # White fill to erase text
+            page.apply_redactions()
+
+        # 2. Remove image-based watermarks
+        image_list = page.get_images(full=True)
+        for img in image_list:
+            # Deleting all images (assuming they are watermarks)
+            xref = img[0]
+            page.delete_image(xref)
+
+        # 3. Remove semi-transparent watermarks
+        for img in image_list:
+            if page.get_image_info(img[0]).get('transparency'):
+                xref = img[0]
+                page.delete_image(xref)
+
+        # 4. Remove layer-based watermarks (Optional Content Groups)
+        ocgs = page.get_ocgs()
+        if ocgs:
+            page.set_ocg_visibility(ocgs, visible=False)  # Hides layers with watermarks
+
+    # Save the processed file to a temporary output file
+    temp_output = "temp_no_watermarks.pdf"
+    doc.save(temp_output)
+    doc.close()
+
+    # 5. Remove metadata watermarks using PyPDF2
+    reader = PdfReader(temp_output)
     writer = PdfWriter()
 
-    # Simply copying pages without altering content for demo purposes
     for page in reader.pages:
         writer.add_page(page)
 
-    with open(output_pdf, "wb") as output_file:
-        writer.write(output_file)
+    # Clear metadata
+    writer.add_metadata({})
+
+    with open(output_pdf, "wb") as final_output:
+        writer.write(final_output)
+
+    # Clean up the temporary file
+    import os
+    os.remove(temp_output)
+
+    print(f"Watermarks removed. Output saved to {output_pdf}")
+
+# Example usage
+remove_watermarks("input_with_watermarks.pdf", "output_no_watermarks.pdf", watermark_text="Confidential")
 
 # Main function to run the bot
 def main():
