@@ -47,7 +47,7 @@ def remove_watermark(input_pdf, output_pdf):
         writer.write(output_file)
 
 # Main function to run the bot
-async def main():
+def main():
     # Create the Application instance using the bot token
     application = Application.builder().token(BOT_TOKEN).build()
 
@@ -55,10 +55,8 @@ async def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
 
-    # Start the bot
-    await application.start_polling()
-    await application.idle()
+    # Start the bot (synchronous call)
+    application.run_polling()
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
