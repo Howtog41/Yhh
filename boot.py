@@ -55,7 +55,7 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
         image_list = page.get_images(full=True)
         for img in image_list:
             # Deleting all images (assuming they are watermarks)
-            xref = img[0]
+            xref = img[0]  # Image cross-reference
             page.delete_image(xref)
 
         # 3. Remove semi-transparent watermarks (Checking for transparency in the image info)
