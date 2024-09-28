@@ -63,17 +63,12 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
                 xref = img[0]
                 page.delete_image(xref)
 
-        # 4. Remove layer-based watermarks (Optional Content Groups)
-        ocgs = page.get_ocgs()
-        if ocgs:
-            page.set_ocg_visibility(ocgs, visible=False)  # Hides layers with watermarks
-
     # Save the processed file to a temporary output file
     temp_output = "temp_no_watermarks.pdf"
     doc.save(temp_output)
     doc.close()
 
-    # 5. Remove metadata watermarks using PyPDF2
+    # 4. Remove metadata watermarks using PyPDF2
     reader = PdfReader(temp_output)
     writer = PdfWriter()
 
@@ -88,6 +83,7 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
 
     # Clean up the temporary file
     os.remove(temp_output)
+
 
 
 # Main function to run the bot
