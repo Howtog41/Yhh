@@ -40,8 +40,10 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
     # Open the PDF using PyMuPDF (fitz)
     doc = fitz.open(input_pdf)
 
-    # Process each page to remove text-based and image-based watermarks
-    for page in doc:
+    # Process each page to remove text-based, image-based watermarks and headers/footers
+    for page_num in range(doc.page_count):
+        page = doc[page_num]
+
         # 1. Remove text-based watermarks
         if watermark_text:
             text_instances = page.search_for(watermark_text)
@@ -52,23 +54,36 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
         # 2. Remove image-based watermarks
         image_list = page.get_images(full=True)
         for img in image_list:
+            # Deleting all images (assuming they are watermarks)
             xref = img[0]
-            # Get image information, such as width, height, and transparency
-            image_info = page.get_image_info(xref)
+            page.delete_image(xref)
 
-            # Define a threshold size for watermarks (e.g., very small images or transparent images)
-            if 'width' in image_info and 'height' in image_info:
-                width, height = image_info['width'], image_info['height']
-                # Skip removing large images (MCQs or figures), only remove small/transparent images
-                if (width * height) < 10000 or image_info.get('transparency', False):
-                    page.delete_image(xref)
+        # 3. Remove semi-transparent watermarks (Checking for transparency in the image info)
+        for img in image_list:
+            image_info = page.get_image_info(img[0])
+            if 'transparency' in image_info and image_info['transparency']:
+                xref = img[0]
+                page.delete_image(xref)
+
+        # 4. Remove headers and footers (based on page position)
+        page_height = page.rect.height
+        header_footer_height = 100  # Adjust this value based on the size of your headers and footers
+
+        # Define header and footer rectangles to be redacted
+        header_rect = fitz.Rect(0, 0, page.rect.width, header_footer_height)
+        footer_rect = fitz.Rect(0, page_height - header_footer_height, page.rect.width, page_height)
+
+        # Redact the header and footer
+        page.add_redact_annot(header_rect, fill=(255, 255, 255))  # White fill to erase headers
+        page.add_redact_annot(footer_rect, fill=(255, 255, 255))  # White fill to erase footers
+        page.apply_redactions()
 
     # Save the processed file to a temporary output file
-    temp_output = "temp_no_watermarks.pdf"
+    temp_output = "temp_no_watermarks_or_footer.pdf"
     doc.save(temp_output)
     doc.close()
 
-    # 3. Remove metadata watermarks using PyPDF2
+    # 5. Remove metadata watermarks using PyPDF2
     reader = PdfReader(temp_output)
     writer = PdfWriter()
 
@@ -83,6 +98,12 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
 
     # Clean up the temporary file
     os.remove(temp_output)
+
+    print(f"Watermarks and footers removed. Output saved to {output_pdf}")
+
+# Example usage
+remove_watermarks("input_with_watermarks.pdf", "output_no_watermarks_or_footer.pdf", watermark_text="SHARMA CLASSES")
+
 
 
 
