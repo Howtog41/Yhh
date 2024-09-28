@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import fitz  # PyMuPDF
 
 # PDF se watermark ko remove karne ka function
@@ -12,29 +12,29 @@ def remove_watermark(pdf_path, output_path):
             for l in b["lines"]:
                 for s in l["spans"]:
                     # Yahan par aap apne logic ko define kar sakte hain watermark ko identify karne ke liye
-                    # Example: Agar koi specific font ya transparency hai, usse remove karein
                     if "watermark" in s["text"].lower():
                         page.delete_textblock(b)
     doc.save(output_path)
 
 # Bot ke zariye PDF file ko handle karna
-def handle_pdf(update: Update, context):
-    file = update.message.document.get_file()
-    file.download("input.pdf")
+async def handle_pdf(update: Update, context):
+    file = await update.message.document.get_file()
+    await file.download_to_drive("input.pdf")
 
     remove_watermark("input.pdf", "output.pdf")
 
-    context.bot.send_document(chat_id=update.message.chat_id, document=open("output.pdf", "rb"))
+    await context.bot.send_document(chat_id=update.message.chat_id, document=open("output.pdf", "rb"))
 
 # Telegram bot setup
-def main():
-    updater = Updater("5725026746:AAES6vUC808RmEhh6_ZAZxwGeu603nZEAt4", use_context=True)
-    dp = updater.dispatcher
+async def main():
+    application = Application.builder().token("5725026746:AAES6vUC808RmEhh6_ZAZxwGeu603nZEAt4").build()
 
-    dp.add_handler(MessageHandler(Filters.document.mime_type("application/pdf"), handle_pdf))
+    application.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
 
-    updater.start_polling()
-    updater.idle()
+    await application.start()
+    await application.updater.start_polling()
+    await application.idle()
 
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
