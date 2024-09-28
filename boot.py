@@ -9,7 +9,7 @@ BOT_TOKEN = '5725026746:AAES6vUC808RmEhh6_ZAZxwGeu603nZEAt4'
 
 # Function to start the bot
 async def start(update: Update, context) -> None:
-    await update.message.reply_text("Send me a PDF file, and I will attempt to remove the watermark.")
+    await update.message.reply_text("Send me a PDF file, and I will attempt to remove the watermark and headers/footers.")
 
 # Function to handle PDF file
 async def handle_pdf(update: Update, context) -> None:
@@ -26,7 +26,7 @@ async def handle_pdf(update: Update, context) -> None:
     # Process PDF to remove watermarks
     try:
         output_pdf = f"output_{file_id}.pdf"
-        remove_watermarks(file_path, output_pdf, watermark_text="Confidential")  # Adjust watermark_text as needed
+        remove_watermarks(file_path, output_pdf, watermark_text="SHARMA CLASSES")  # Adjust watermark_text as needed
         await update.message.reply_document(document=open(output_pdf, 'rb'))
     except Exception as e:
         await update.message.reply_text(f"Could not remove the watermark: {e}")
@@ -35,7 +35,7 @@ async def handle_pdf(update: Update, context) -> None:
         if os.path.exists(output_pdf):
             os.remove(output_pdf)
 
-# Function to remove watermarks from a PDF file
+# Function to remove watermarks and headers/footers from a PDF file
 def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
     # Open the PDF using PyMuPDF (fitz)
     doc = fitz.open(input_pdf)
@@ -98,14 +98,6 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
 
     # Clean up the temporary file
     os.remove(temp_output)
-
-    print(f"Watermarks and footers removed. Output saved to {output_pdf}")
-
-# Example usage
-remove_watermarks("input_with_watermarks.pdf", "output_no_watermarks_or_footer.pdf", watermark_text="SHARMA CLASSES")
-
-
-
 
 # Main function to run the bot
 def main():
