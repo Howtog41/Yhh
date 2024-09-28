@@ -56,9 +56,10 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
             xref = img[0]
             page.delete_image(xref)
 
-        # 3. Remove semi-transparent watermarks
+        # 3. Remove semi-transparent watermarks (Checking for transparency in the image info)
         for img in image_list:
-            if page.get_image_info(img[0]).get('transparency'):
+            image_info = page.get_image_info(img[0])
+            if 'transparency' in image_info and image_info['transparency']:
                 xref = img[0]
                 page.delete_image(xref)
 
@@ -87,6 +88,7 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
 
     # Clean up the temporary file
     os.remove(temp_output)
+
 
 # Main function to run the bot
 def main():
