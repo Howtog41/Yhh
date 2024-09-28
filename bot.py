@@ -1,11 +1,11 @@
 import os
-import fitz  # PyMuPDF for handling text, images, layers
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from PyPDF2 import PdfReader, PdfWriter
+import fitz  # PyMuPDF for handling text, images, layers
 
-# Your bot token from BotFather
-BOT_TOKEN = '5725026746:AAES6vUC808RmEhh6_ZAZxwGeu603nZEAt4'
+# Load bot token from environment variable for security
+BOT_TOKEN = os.getenv('5725026746:AAES6vUC808RmEhh6_ZAZxwGeu603nZEAt4')
 
 # Function to start the bot
 async def start(update: Update, context) -> None:
@@ -26,18 +26,19 @@ async def handle_pdf(update: Update, context) -> None:
     # Process PDF to remove watermarks
     try:
         output_pdf = f"output_{file_id}.pdf"
-        remove_watermark(file_path, output_pdf)
+        watermark_text = "Confidential"  # Change this to the watermark text you want to remove
+        remove_watermark(file_path, output_pdf, watermark_text)
         await update.message.reply_document(document=open(output_pdf, 'rb'))
     except Exception as e:
         await update.message.reply_text(f"Could not remove the watermark: {e}")
     finally:
+        # Clean up files after processing
         os.remove(file_path)
         if os.path.exists(output_pdf):
             os.remove(output_pdf)
 
 # Function to remove watermark from a PDF file
-
-def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
+def remove_watermark(input_pdf, output_pdf, watermark_text=None):
     # Open the PDF using PyMuPDF (fitz)
     doc = fitz.open(input_pdf)
 
@@ -87,13 +88,7 @@ def remove_watermarks(input_pdf, output_pdf, watermark_text=None):
         writer.write(final_output)
 
     # Clean up the temporary file
-    import os
     os.remove(temp_output)
-
-    print(f"Watermarks removed. Output saved to {output_pdf}")
-
-# Example usage
-remove_watermarks("input_with_watermarks.pdf", "output_no_watermarks.pdf", watermark_text="Confidential")
 
 # Main function to run the bot
 def main():
@@ -104,7 +99,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
 
-    # Start the bot (synchronous call)
+    # Start the bot
     application.run_polling()
 
 if __name__ == '__main__':
