@@ -11,7 +11,6 @@ def remove_watermark(pdf_path, output_path):
         for b in blocks:
             for l in b["lines"]:
                 for s in l["spans"]:
-                    # Yahan par aap apne logic ko define kar sakte hain watermark ko identify karne ke liye
                     if "watermark" in s["text"].lower():
                         page.delete_textblock(b)
     doc.save(output_path)
@@ -31,9 +30,8 @@ async def main():
 
     application.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
 
-    await application.start()
-    await application.updater.start_polling()
-    await application.idle()
+    # Application ko run_polling ke saath start karte hain
+    await application.run_polling()
 
 if __name__ == '__main__':
     import asyncio
